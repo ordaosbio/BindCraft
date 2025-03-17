@@ -233,9 +233,9 @@ def perform_input_check(args):
 def perform_advanced_settings_check(advanced_settings, bindcraft_folder):
     # set paths to model weights and executables
     if bindcraft_folder == "colab":
-        advanced_settings["af_params_dir"] = '/content/bindcraft/params/'
-        advanced_settings["dssp_path"] = '/content/bindcraft/functions/dssp'
-        advanced_settings["dalphaball_path"] = '/content/bindcraft/functions/DAlphaBall.gcc'
+        advanced_settings["af_params_dir"] = 'params/'
+        advanced_settings["dssp_path"] = '/usr/bin/dssp'
+        advanced_settings["dalphaball_path"] = '../content/bindcraft/functions/DAlphaBall.gcc'
     else:
         # Set paths individually if they are not already set
         if not advanced_settings["af_params_dir"]:

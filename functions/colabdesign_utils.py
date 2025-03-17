@@ -7,14 +7,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import jax
 import jax.numpy as jnp
-from scipy.special import softmax
 from colabdesign import mk_afdesign_model, clear_mem
 from colabdesign.mpnn import mk_mpnn_model
 from colabdesign.af.alphafold.common import residue_constants
 from colabdesign.af.loss import get_ptm, mask_loss, get_dgram_bins, _get_con_loss
 from colabdesign.shared.utils import copy_dict
-from .biopython_utils import hotspot_residues, calculate_clash_score, calc_ss_percentage, calculate_percentages
-from .pyrosetta_utils import pr_relax, align_pdbs
+from .biopython_utils import hotspot_residues, calculate_clash_score, calc_ss_percentage
+from .pyrosetta_utils import align_pdbs
 from .generic_utils import update_failures
 
 # hallucinate a binder
@@ -25,7 +24,7 @@ def binder_hallucination(design_name, starting_pdb, chain, target_hotspot_residu
     clear_mem()
 
     # initialise binder hallucination model
-    af_model = mk_afdesign_model(protocol="binder", debug=False, data_dir=advanced_settings["af_params_dir"], 
+    af_model = mk_afdesign_model(protocol="binder", debug=False, data_dir=advanced_settings["af_params_dir"],
                                 use_multimer=advanced_settings["use_multimer_design"], num_recycles=advanced_settings["num_recycles_design"],
                                 best_metric='loss')
 
@@ -47,7 +46,7 @@ def binder_hallucination(design_name, starting_pdb, chain, target_hotspot_residu
     # redefine intramolecular contacts (con) and intermolecular contacts (i_con) definitions
     af_model.opt["con"].update({"num":advanced_settings["intra_contact_number"],"cutoff":advanced_settings["intra_contact_distance"],"binary":False,"seqsep":9})
     af_model.opt["i_con"].update({"num":advanced_settings["inter_contact_number"],"cutoff":advanced_settings["inter_contact_distance"],"binary":False})
-        
+
 
     ### additional loss functions
     if advanced_settings["use_rg_loss"]:
@@ -71,12 +70,12 @@ def binder_hallucination(design_name, starting_pdb, chain, target_hotspot_residu
     ### start design algorithm based on selection
     if advanced_settings["design_algorithm"] == '2stage':
         # uses gradient descend to get a PSSM profile and then uses PSSM to bias the sampling of random mutations to decrease loss
-        af_model.design_pssm_semigreedy(soft_iters=advanced_settings["soft_iterations"], hard_iters=advanced_settings["greedy_iterations"], tries=greedy_tries, models=design_models, 
+        af_model.design_pssm_semigreedy(soft_iters=advanced_settings["soft_iterations"], hard_iters=advanced_settings["greedy_iterations"], tries=greedy_tries, models=design_models,
                                         num_models=1, sample_models=advanced_settings["sample_models"], ramp_models=False, save_best=True)
 
     elif advanced_settings["design_algorithm"] == '3stage':
         # 3 stage design using logits, softmax, and one hot encoding
-        af_model.design_3stage(soft_iters=advanced_settings["soft_iterations"], temp_iters=advanced_settings["temporary_iterations"], hard_iters=advanced_settings["hard_iterations"], 
+        af_model.design_3stage(soft_iters=advanced_settings["soft_iterations"], temp_iters=advanced_settings["temporary_iterations"], hard_iters=advanced_settings["hard_iterations"],
                                 num_models=1, models=design_models, sample_models=advanced_settings["sample_models"], save_best=True)
 
     elif advanced_settings["design_algorithm"] == 'greedy':
@@ -98,7 +97,7 @@ def binder_hallucination(design_name, starting_pdb, chain, target_hotspot_residu
 
         # determine pLDDT of best iteration according to lowest 'loss' value
         initial_plddt = get_best_plddt(af_model, length)
-        
+
         # if best iteration has high enough confidence then continue
         if initial_plddt > 0.65:
             print("Initial trajectory pLDDT good, continuing: "+str(initial_plddt))
@@ -153,7 +152,7 @@ def binder_hallucination(design_name, starting_pdb, chain, target_hotspot_residu
                     print("One-hot trajectory pLDDT good, continuing: "+str(onehot_plddt))
                     if advanced_settings["greedy_iterations"] > 0:
                         print("Stage 4: PSSM Semigreedy Optimisation")
-                        af_model.design_pssm_semigreedy(soft_iters=0, hard_iters=advanced_settings["greedy_iterations"], tries=greedy_tries, models=design_models, 
+                        af_model.design_pssm_semigreedy(soft_iters=0, hard_iters=advanced_settings["greedy_iterations"], tries=greedy_tries, models=design_models,
                                                         num_models=1, sample_models=advanced_settings["sample_models"], ramp_models=False, save_best=True)
 
                 else:
@@ -257,10 +256,10 @@ def predict_binder_complex(prediction_model, binder_sequence, mpnn_design_name, 
 
             # extract the statistics for the model
             stats = {
-                'pLDDT': round(prediction_metrics['plddt'], 2), 
-                'pTM': round(prediction_metrics['ptm'], 2), 
-                'i_pTM': round(prediction_metrics['i_ptm'], 2), 
-                'pAE': round(prediction_metrics['pae'], 2), 
+                'pLDDT': round(prediction_metrics['plddt'], 2),
+                'pTM': round(prediction_metrics['ptm'], 2),
+                'i_pTM': round(prediction_metrics['i_ptm'], 2),
+                'pAE': round(prediction_metrics['pae'], 2),
                 'i_pAE': round(prediction_metrics['i_pae'], 2)
             }
             prediction_stats[model_num+1] = stats
@@ -297,7 +296,8 @@ def predict_binder_complex(prediction_model, binder_sequence, mpnn_design_name, 
         complex_pdb = os.path.join(design_paths["MPNN"], f"{mpnn_design_name}_model{model_num+1}.pdb")
         if pass_af2_filters:
             mpnn_relaxed = os.path.join(design_paths["MPNN/Relaxed"], f"{mpnn_design_name}_model{model_num+1}.pdb")
-            pr_relax(complex_pdb, mpnn_relaxed)
+            shutil.copy(complex_pdb, mpnn_relaxed)
+            # pr_relax(complex_pdb, mpnn_relaxed)
         else:
             if os.path.exists(complex_pdb):
                 os.remove(complex_pdb)
@@ -327,8 +327,8 @@ def predict_binder_alone(prediction_model, binder_sequence, mpnn_design_name, le
 
             # extract the statistics for the model
             stats = {
-                'pLDDT': round(prediction_metrics['plddt'], 2), 
-                'pTM': round(prediction_metrics['ptm'], 2), 
+                'pLDDT': round(prediction_metrics['plddt'], 2),
+                'pTM': round(prediction_metrics['ptm'], 2),
                 'pAE': round(prediction_metrics['pae'], 2)
             }
             binder_stats[model_num+1] = stats
@@ -387,13 +387,13 @@ def add_i_ptm_loss(self, weight=0.1):
         p = 1 - get_ptm(inputs, outputs, interface=True)
         i_ptm = mask_loss(p)
         return {"i_ptm": i_ptm}
-    
+
     self._callbacks["model"]["loss"].append(loss_iptm)
     self.opt["weights"]["i_ptm"] = weight
 
 # add helicity loss
 def add_helix_loss(self, weight=0):
-    def binder_helicity(inputs, outputs):  
+    def binder_helicity(inputs, outputs):
       if "offset" in inputs:
         offset = inputs["offset"]
       else:
@@ -472,6 +472,6 @@ def plot_trajectory(af_model, design_name, design_paths):
 
             # Save the plot
             plt.savefig(os.path.join(design_paths["Trajectory/Plots"], design_name+"_"+metric+".png"), dpi=150)
-            
+
             # Close the figure
             plt.close()

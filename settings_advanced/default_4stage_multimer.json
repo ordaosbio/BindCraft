@@ -15,7 +15,7 @@
     "hard_iterations": 5,
     "greedy_iterations": 15,
     "greedy_percentage": 5,
-    "save_design_animations": true,
+    "save_design_animations": false,
     "save_design_trajectory_plots": true,
     "weights_plddt": 0.1,
     "weights_pae_intra": 0.4,
@@ -61,7 +61,7 @@
     "enable_rejection_check": true,
     "acceptance_rate": 0.01,
     "start_monitoring": 600,
-    "af_params_dir": "",
-    "dssp_path": "",
+    "af_params_dir": "/home/sahil/BindCraft/params/",
+    "dssp_path": "/usr/bin/dssp",
     "dalphaball_path": ""
 }

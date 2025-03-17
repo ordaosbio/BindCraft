@@ -57,7 +57,7 @@ generate_filter_pass_csv(failure_csv, args.filters)
 ####################################
 ####################################
 ### initialise PyRosetta
-pr.init(f'-ignore_unrecognized_res -ignore_zero_occupancy -mute all -holes:dalphaball {advanced_settings["dalphaball_path"]} -corrections::beta_nov16 true -relax:default_repeats 1')
+#pr.init(f'-ignore_unrecognized_res -ignore_zero_occupancy -mute all -holes:dalphaball {advanced_settings["dalphaball_path"]} -corrections::beta_nov16 true -relax:default_repeats 1')
 print(f"Running binder design for target {settings_file}")
 print(f"Design settings used: {advanced_file}")
 print(f"Filtering designs based on {filters_file}")
@@ -125,26 +125,26 @@ while True:
         if trajectory.aux["log"]["terminate"] == "":
             # Relax binder to calculate statistics
             trajectory_relaxed = os.path.join(design_paths["Trajectory/Relaxed"], design_name + ".pdb")
-            pr_relax(trajectory_pdb, trajectory_relaxed)
-
+            # pr_relax(trajectory_pdb, trajectory_relaxed)
+            shutil.copy(trajectory_pdb, trajectory_relaxed)
             # define binder chain, placeholder in case multi-chain parsing in ColabDesign gets changed
             binder_chain = "B"
 
             # Calculate clashes before and after relaxation
             num_clashes_trajectory = calculate_clash_score(trajectory_pdb)
-            num_clashes_relaxed = calculate_clash_score(trajectory_relaxed)
+            # num_clashes_relaxed = calculate_clash_score(trajectory_relaxed)
 
             # secondary structure content of starting trajectory binder and interface
             trajectory_alpha, trajectory_beta, trajectory_loops, trajectory_alpha_interface, trajectory_beta_interface, trajectory_loops_interface, trajectory_i_plddt, trajectory_ss_plddt = calc_ss_percentage(trajectory_pdb, advanced_settings, binder_chain)
 
             # analyze interface scores for relaxed af2 trajectory
-            trajectory_interface_scores, trajectory_interface_AA, trajectory_interface_residues = score_interface(trajectory_relaxed, binder_chain)
+            trajectory_interface_scores, trajectory_interface_AA, trajectory_interface_residues = score_interface(trajectory_pdb, binder_chain)
 
             # starting binder sequence
             trajectory_sequence = trajectory.get_seq(get_best=True)[0]
 
             # analyze sequence
-            traj_seq_notes = validate_design_sequence(trajectory_sequence, num_clashes_relaxed, advanced_settings)
+            traj_seq_notes = validate_design_sequence(trajectory_sequence, num_clashes_trajectory, advanced_settings)
 
             # target structure RMSD compared to input PDB
             trajectory_target_rmsd = target_pdb_rmsd(trajectory_pdb, target_settings["starting_pdb"], target_settings["chains"])
@@ -152,7 +152,7 @@ while True:
             # save trajectory statistics into CSV
             trajectory_data = [design_name, advanced_settings["design_algorithm"], length, seed, helicity_value, target_settings["target_hotspot_residues"], trajectory_sequence, trajectory_interface_residues, 
                                 trajectory_metrics['plddt'], trajectory_metrics['ptm'], trajectory_metrics['i_ptm'], trajectory_metrics['pae'], trajectory_metrics['i_pae'],
-                                trajectory_i_plddt, trajectory_ss_plddt, num_clashes_trajectory, num_clashes_relaxed, trajectory_interface_scores['binder_score'],
+                                trajectory_i_plddt, trajectory_ss_plddt, num_clashes_trajectory, trajectory_interface_scores['binder_score'],
                                 trajectory_interface_scores['surface_hydrophobicity'], trajectory_interface_scores['interface_sc'], trajectory_interface_scores['interface_packstat'],
                                 trajectory_interface_scores['interface_dG'], trajectory_interface_scores['interface_dSASA'], trajectory_interface_scores['interface_dG_SASA_ratio'],
                                 trajectory_interface_scores['interface_fraction'], trajectory_interface_scores['interface_hydrophobicity'], trajectory_interface_scores['interface_nres'], trajectory_interface_scores['interface_interface_hbonds'],
@@ -243,15 +243,15 @@ while True:
                         # calculate statistics for each model individually
                         for model_num in prediction_models:
                             mpnn_design_pdb = os.path.join(design_paths["MPNN"], f"{mpnn_design_name}_model{model_num+1}.pdb")
-                            mpnn_design_relaxed = os.path.join(design_paths["MPNN/Relaxed"], f"{mpnn_design_name}_model{model_num+1}.pdb")
+                            #mpnn_design_relaxed = os.path.join(design_paths["MPNN/Relaxed"], f"{mpnn_design_name}_model{model_num+1}.pdb")
 
                             if os.path.exists(mpnn_design_pdb):
                                 # Calculate clashes before and after relaxation
                                 num_clashes_mpnn = calculate_clash_score(mpnn_design_pdb)
-                                num_clashes_mpnn_relaxed = calculate_clash_score(mpnn_design_relaxed)
+                                #num_clashes_mpnn_relaxed = calculate_clash_score(mpnn_design_relaxed)
 
                                 # analyze interface scores for relaxed af2 trajectory
-                                mpnn_interface_scores, mpnn_interface_AA, mpnn_interface_residues = score_interface(mpnn_design_relaxed, binder_chain)
+                                mpnn_interface_scores, mpnn_interface_AA, mpnn_interface_residues = score_interface(mpnn_design_pdb, binder_chain)
 
                                 # secondary structure content of starting trajectory binder
                                 mpnn_alpha, mpnn_beta, mpnn_loops, mpnn_alpha_interface, mpnn_beta_interface, mpnn_loops_interface, mpnn_i_plddt, mpnn_ss_plddt = calc_ss_percentage(mpnn_design_pdb, advanced_settings, binder_chain)
@@ -267,7 +267,7 @@ while True:
                                     'i_pLDDT': mpnn_i_plddt,
                                     'ss_pLDDT': mpnn_ss_plddt,
                                     'Unrelaxed_Clashes': num_clashes_mpnn,
-                                    'Relaxed_Clashes': num_clashes_mpnn_relaxed,
+                                    'Relaxed_Clashes': 0, #num_clashes_mpnn_relaxed,
                                     'Binder_Energy_Score': mpnn_interface_scores['binder_score'],
                                     'Surface_Hydrophobicity': mpnn_interface_scores['surface_hydrophobicity'],
                                     'ShapeComplementarity': mpnn_interface_scores['interface_sc'],

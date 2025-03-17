@@ -224,15 +224,15 @@
         "higher": false
     },
     "Average_Binder_Energy_Score": {
-        "threshold": 0,
+        "threshold": null,
         "higher": false
     },
     "1_Binder_Energy_Score": {
-        "threshold": 0,
+        "threshold": null,
         "higher": false
     },
     "2_Binder_Energy_Score": {
-        "threshold": 0,
+        "threshold": null,
         "higher": false
     },
     "3_Binder_Energy_Score": {
@@ -248,15 +248,15 @@
         "higher": false
     },
     "Average_Surface_Hydrophobicity": {
-        "threshold": 0.35,
+        "threshold": null,
         "higher": false
     },
     "1_Surface_Hydrophobicity": {
-        "threshold": 0.35,
+        "threshold": null,
         "higher": false
     },
     "2_Surface_Hydrophobicity": {
-        "threshold": 0.35,
+        "threshold": null,
         "higher": false
     },
     "3_Surface_Hydrophobicity": {
@@ -272,15 +272,15 @@
         "higher": false
     },
     "Average_ShapeComplementarity": {
-        "threshold": 0.6,
+        "threshold": null,
         "higher": true
     },
     "1_ShapeComplementarity": {
-        "threshold": 0.55,
+        "threshold": null,
         "higher": true
     },
     "2_ShapeComplementarity": {
-        "threshold": 0.55,
+        "threshold": null,
         "higher": true
     },
     "3_ShapeComplementarity": {
@@ -320,15 +320,15 @@
         "higher": true
     },
     "Average_dG": {
-        "threshold": 0,
+        "threshold": null,
         "higher": false
     },
     "1_dG": {
-        "threshold": 0,
+        "threshold": null,
         "higher": false
     },
     "2_dG": {
-        "threshold": 0,
+        "threshold": null,
         "higher": false
     },
     "3_dG": {
@@ -344,15 +344,15 @@
         "higher": false
     },
     "Average_dSASA": {
-        "threshold": 1,
+        "threshold": null,
         "higher": true
     },
     "1_dSASA": {
-        "threshold": 1,
+        "threshold": null,
         "higher": true
     },
     "2_dSASA": {
-        "threshold": 1,
+        "threshold": null,
         "higher": true
     },
     "3_dSASA": {
@@ -464,15 +464,15 @@
         "higher": true
     },
     "Average_n_InterfaceHbonds": {
-        "threshold": 3,
+        "threshold": null,
         "higher": true
     },
     "1_n_InterfaceHbonds": {
-        "threshold": 3,
+        "threshold": null,
         "higher": true
     },
     "2_n_InterfaceHbonds": {
-        "threshold": 3,
+        "threshold": null,
         "higher": true
     },
     "3_n_InterfaceHbonds": {
@@ -512,15 +512,15 @@
         "higher": true
     },
     "Average_n_InterfaceUnsatHbonds": {
-        "threshold": 4,
+        "threshold": null,
         "higher": false
     },
     "1_n_InterfaceUnsatHbonds": {
-        "threshold": 4,
+        "threshold": null,
         "higher": false
     },
     "2_n_InterfaceUnsatHbonds": {
-        "threshold": 4,
+        "threshold": null,
         "higher": false
     },
     "3_n_InterfaceUnsatHbonds": {
