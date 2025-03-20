@@ -17,6 +17,8 @@ from .generic_utils import clean_pdb
 from .biopython_utils import hotspot_residues
 from biotite.structure import superimpose_homologs, rmspd
 from biotite.structure.io import load_structure, save_structure
+from alphafold.relax import relax
+from alphafold.common import protein, residue_constants
 
 # Rosetta interface scores
 def score_interface(pdb_file, binder_chain="B"):
@@ -42,7 +44,7 @@ def score_interface(pdb_file, binder_chain="B"):
     # Initialize list to store PDB residue IDs at the interface
     interface_residues_set = hotspot_residues(pdb_file, binder_chain)
     interface_residues_pdb_ids = []
-    
+
     # Iterate over the interface residues
     for pdb_res_num, aa_type in interface_residues_set.items():
         # Increase the count for this amino acid type
@@ -108,7 +110,7 @@ def score_interface(pdb_file, binder_chain="B"):
     #surface_res = layer_sel.apply(binder_pose)
 
     #exp_apol_count = 0
-    #total_count = 0 
+    #total_count = 0
     #
     ## count apolar and aromatic residues at the surface
     #for i in range(1, len(surface_res) + 1):
@@ -137,7 +139,7 @@ def score_interface(pdb_file, binder_chain="B"):
     'interface_interface_hbonds': 0,
     'interface_hbond_percentage': 0,
     'interface_delta_unsat_hbonds': 0,
-    'interface_delta_unsat_hbonds_percentage':0 
+    'interface_delta_unsat_hbonds_percentage':0
     }
 
     # round to two decimal places
@@ -178,34 +180,6 @@ def align_pdbs(reference_pdb, align_pdb, reference_chain_id, align_chain_id):
 
 # calculate the rmsd without alignment
 def unaligned_rmsd(reference_pdb, align_pdb, reference_chain_id, align_chain_id):
-    #reference_pose = pr.pose_from_pdb(reference_pdb)
-    #align_pose = pr.pose_from_pdb(align_pdb)
-
-    ## Define chain selectors for the reference and align chains
-    #reference_chain_selector = ChainSelector(reference_chain_id)
-    #align_chain_selector = ChainSelector(align_chain_id)
-
-    ## Apply selectors to get residue subsets
-    #reference_chain_subset = reference_chain_selector.apply(reference_pose)
-    #align_chain_subset = align_chain_selector.apply(align_pose)
-
-    ## Convert subsets to residue index vectors
-    #reference_residue_indices = get_residues_from_subset(reference_chain_subset)
-    #align_residue_indices = get_residues_from_subset(align_chain_subset)
-
-    ## Create empty subposes
-    #reference_chain_pose = pr.Pose()
-    #align_chain_pose = pr.Pose()
-
-    ## Fill subposes
-    #pose_from_pose(reference_chain_pose, reference_pose, reference_residue_indices)
-    #pose_from_pose(align_chain_pose, align_pose, align_residue_indices)
-
-    ## Calculate RMSD using the RMSDMetric
-    #rmsd_metric = RMSDMetric()
-    #rmsd_metric.set_comparison_pose(reference_chain_pose)
-    #rmsd = rmsd_metric.calculate(align_chain_pose)
-    
     ref = load_structure(reference_pdb)
     ref = ref[ref.chain_id == reference_chain_id]
     aln = load_structure(align_pdb)
@@ -219,6 +193,7 @@ def unaligned_rmsd(reference_pdb, align_pdb, reference_chain_id, align_chain_id)
         with open('errors.txt', 'a') as f:
             f.writelines('\n'.join([str(e), reference_pdb, reference_chain_id, align_pdb, align_chain_id])+'\n')
         return -1
+
 # Relax designed structure
 def pr_relax(pdb_file, relaxed_pdb_path):
     if not os.path.exists(relaxed_pdb_path):
@@ -260,3 +235,79 @@ def pr_relax(pdb_file, relaxed_pdb_path):
         # output relaxed and aligned PDB
         pose.dump_pdb(relaxed_pdb_path)
         clean_pdb(relaxed_pdb_path)
+
+
+MODRES = {'MSE':'MET','MLY':'LYS','FME':'MET','HYP':'PRO',
+          'TPO':'THR','CSO':'CYS','SEP':'SER','M3L':'LYS',
+          'HSK':'HIS','SAC':'SER','PCA':'GLU','DAL':'ALA',
+          'CME':'CYS','CSD':'CYS','OCS':'CYS','DPR':'PRO',
+          'B3K':'LYS','ALY':'LYS','YCM':'CYS','MLZ':'LYS',
+          '4BF':'TYR','KCX':'LYS','B3E':'GLU','B3D':'ASP',
+          'HZP':'PRO','CSX':'CYS','BAL':'ALA','HIC':'HIS',
+          'DBZ':'ALA','DCY':'CYS','DVA':'VAL','NLE':'LEU',
+          'SMC':'CYS','AGM':'ARG','B3A':'ALA','DAS':'ASP',
+          'DLY':'LYS','DSN':'SER','DTH':'THR','GL3':'GLY',
+          'HY3':'PRO','LLP':'LYS','MGN':'GLN','MHS':'HIS',
+          'TRQ':'TRP','B3Y':'TYR','PHI':'PHE','PTR':'TYR',
+          'TYS':'TYR','IAS':'ASP','GPL':'LYS','KYN':'TRP',
+          'CSD':'CYS','SEC':'CYS'}
+
+def pdb_to_string(pdb_file, chains=None, models=[1]):
+  '''read pdb file and return as string'''
+
+  if chains is not None:
+    if "," in chains: chains = chains.split(",")
+    if not isinstance(chains,list): chains = [chains]
+  if models is not None:
+    if not isinstance(models,list): models = [models]
+
+  modres = {**MODRES}
+  lines = []
+  seen = []
+  model = 1
+  for line in open(pdb_file,"rb"):
+    line = line.decode("utf-8","ignore").rstrip()
+    if line[:5] == "MODEL":
+      model = int(line[5:])
+    if models is None or model in models:
+      if line[:6] == "MODRES":
+        k = line[12:15]
+        v = line[24:27]
+        if k not in modres and v in residue_constants.restype_3to1:
+          modres[k] = v
+      if line[:6] == "HETATM":
+        k = line[17:20]
+        if k in modres:
+          line = "ATOM  "+line[6:17]+modres[k]+line[20:]
+      if line[:4] == "ATOM":
+        chain = line[21:22]
+        if chains is None or chain in chains:
+          atom = line[12:12+4].strip()
+          resi = line[17:17+3]
+          resn = line[22:22+5].strip()
+          if resn[-1].isalpha(): # alternative atom
+            resn = resn[:-1]
+            line = line[:26]+" "+line[27:]
+          key = f"{model}_{chain}_{resn}_{resi}_{atom}"
+          if key not in seen: # skip alternative placements
+            lines.append(line)
+            seen.append(key)
+      if line[:5] == "MODEL" or line[:3] == "TER" or line[:6] == "ENDMDL":
+        lines.append(line)
+  return "\n".join(lines)
+
+def relax(pdb_file: str, relaxed_pdb_path: str, max_iterations: int = 2000, tolerance: float = 2.39, stiffness: float = 10.0):
+    if not os.path.exists(relaxed_pdb_path):
+        pdb_str = pdb_to_string(pdb_in)
+        protein_obj = protein.from_pdb_string(pdb_str)
+        amber_relaxer = relax.AmberRelaxation(
+            max_iterations=max_iterations,
+            tolerance=tolerance,
+            stiffness=stiffness,
+            exclude_residues=[],
+            max_outer_iterations=3,
+            use_gpu=True
+        )
+        relaxed_pdb_lines, _, _ = amber_relaxer.process(prot=protein_obj)
+        with open(relaxed_pdb_path, 'w') as f:
+            f.write(relaxed_pdb_lines)

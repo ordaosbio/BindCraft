@@ -1,3 +1,5 @@
 params
 *pycache*
 *.pdb
+*.png
+*.csv

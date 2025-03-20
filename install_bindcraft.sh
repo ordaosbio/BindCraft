@@ -63,9 +63,9 @@ echo -e "BindCraft environment activated at ${CONDA_BASE}/envs/BindCraft"
 # install required conda packages
 echo -e "Instaling conda requirements\n"
 if [ -n "$cuda" ]; then
-    CONDA_OVERRIDE_CUDA="$cuda" $pkg_manager install pip pandas matplotlib numpy"<2.0.0" biopython biotite scipy pdbfixer seaborn libgfortran5 tqdm jupyter ffmpeg fsspec py3dmol chex dm-haiku flax"<0.10.0" dm-tree joblib ml-collections immutabledict optax jaxlib=*=*cuda* jax cuda-nvcc cudnn -c conda-forge -c nvidia  --channel https://conda.graylab.jhu.edu -y || { echo -e "Error: Failed to install conda packages."; exit 1; }
+    CONDA_OVERRIDE_CUDA="$cuda" $pkg_manager install pip pandas matplotlib numpy"<2.0.0" biopython biotite scipy pdbfixer openmm"=8.2.0" seaborn libgfortran5 tqdm jupyter ffmpeg fsspec py3dmol chex dm-haiku flax"<0.10.0" dm-tree joblib ml-collections immutabledict optax jaxlib=*=*cuda* jax cuda-nvcc cudnn -c conda-forge -c nvidia  --channel https://conda.graylab.jhu.edu -y || { echo -e "Error: Failed to install conda packages."; exit 1; }
 else
-    $pkg_manager install pip pandas matplotlib numpy"<2.0.0" biopython biotite scipy pdbfixer seaborn libgfortran5 tqdm jupyter ffmpeg fsspec py3dmol chex dm-haiku flax"<0.10.0" dm-tree joblib ml-collections immutabledict optax jaxlib jax cuda-nvcc cudnn -c conda-forge -c nvidia  --channel https://conda.graylab.jhu.edu -y || { echo -e "Error: Failed to install conda packages."; exit 1; }
+    $pkg_manager install pip pandas matplotlib numpy"<2.0.0" biopython biotite scipy pdbfixer openmm"=8.2.0" seaborn libgfortran5 tqdm jupyter ffmpeg fsspec py3dmol chex dm-haiku flax"<0.10.0" dm-tree joblib ml-collections immutabledict optax jaxlib jax cuda-nvcc cudnn -c conda-forge -c nvidia  --channel https://conda.graylab.jhu.edu -y || { echo -e "Error: Failed to install conda packages."; exit 1; }
 fi
 
 # make sure all required packages were installed
@@ -88,24 +88,24 @@ fi
 
 # install ColabDesign
 echo -e "Installing ColabDesign\n"
-pip3 install git+https://github.com/sokrypton/ColabDesign.git --no-deps || { echo -e "Error: Failed to install ColabDesign"; exit 1; }
+pip3 install alphafold-colabfold git+https://github.com/sokrypton/ColabDesign.git --no-deps || { echo -e "Error: Failed to install ColabDesign"; exit 1; }
 #python -c "import colabdesign" >/dev/null 2>&1 || { echo -e "Error: colabdesign module not found after installation"; exit 1; }
 
-## AlphaFold2 weights
-#echo -e "Downloading AlphaFold2 model weights \n"
-#params_dir="${install_dir}/params"
-#params_file="${params_dir}/alphafold_params_2022-12-06.tar"
-#
-## download AF2 weights
-#mkdir -p "${params_dir}" || { echo -e "Error: Failed to create weights directory"; exit 1; }
-#wget -O "${params_file}" "https://storage.googleapis.com/alphafold/alphafold_params_2022-12-06.tar" || { echo -e "Error: Failed to download AlphaFold2 weights"; exit 1; }
-#[ -s "${params_file}" ] || { echo -e "Error: Could not locate downloaded AlphaFold2 weights"; exit 1; }
-#
-## extract AF2 weights
-#tar tf "${params_file}" >/dev/null 2>&1 || { echo -e "Error: Corrupt AlphaFold2 weights download"; exit 1; }
-#tar -xvf "${params_file}" -C "${params_dir}" || { echo -e "Error: Failed to extract AlphaFold2weights"; exit 1; }
-#[ -f "${params_dir}/params_model_5_ptm.npz" ] || { echo -e "Error: Could not locate extracted AlphaFold2 weights"; exit 1; }
-#rm "${params_file}" || { echo -e "Warning: Failed to remove AlphaFold2 weights archive"; }
+# AlphaFold2 weights
+echo -e "Downloading AlphaFold2 model weights \n"
+params_dir="${install_dir}/params"
+params_file="${params_dir}/alphafold_params_2022-12-06.tar"
+
+# download AF2 weights
+mkdir -p "${params_dir}" || { echo -e "Error: Failed to create weights directory"; exit 1; }
+wget -O "${params_file}" "https://storage.googleapis.com/alphafold/alphafold_params_2022-12-06.tar" || { echo -e "Error: Failed to download AlphaFold2 weights"; exit 1; }
+[ -s "${params_file}" ] || { echo -e "Error: Could not locate downloaded AlphaFold2 weights"; exit 1; }
+
+# extract AF2 weights
+tar tf "${params_file}" >/dev/null 2>&1 || { echo -e "Error: Corrupt AlphaFold2 weights download"; exit 1; }
+tar -xvf "${params_file}" -C "${params_dir}" || { echo -e "Error: Failed to extract AlphaFold2weights"; exit 1; }
+[ -f "${params_dir}/params_model_5_ptm.npz" ] || { echo -e "Error: Could not locate extracted AlphaFold2 weights"; exit 1; }
+rm "${params_file}" || { echo -e "Warning: Failed to remove AlphaFold2 weights archive"; }
 
 # chmod executables
 echo -e "Changing permissions for executables\n"
