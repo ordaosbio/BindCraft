@@ -311,3 +311,5 @@ def relax(pdb_file: str, relaxed_pdb_path: str, max_iterations: int = 2000, tole
         relaxed_pdb_lines, _, _ = amber_relaxer.process(prot=protein_obj)
         with open(relaxed_pdb_path, 'w') as f:
             f.write(relaxed_pdb_lines)
+        chain = protein.PDB_CHAIN_IDS[protein_obj.chain_index]
+        align_pdbs(pdb_file, relaxed_pdb_path, chain, chain)
