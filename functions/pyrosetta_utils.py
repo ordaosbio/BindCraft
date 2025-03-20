@@ -296,9 +296,9 @@ def pdb_to_string(pdb_file, chains=None, models=[1]):
         lines.append(line)
   return "\n".join(lines)
 
-def relax(pdb_file: str, relaxed_pdb_path: str, max_iterations: int = 2000, tolerance: float = 2.39, stiffness: float = 10.0):
+def relax(pdb_file: str, relaxed_pdb_path: str, max_iterations: int = 2000, tolerance: float = 2.39, stiffness: float = 1.0):
     if not os.path.exists(relaxed_pdb_path):
-        pdb_str = pdb_to_string(pdb_in)
+        pdb_str = pdb_to_string(pdb_file)
         protein_obj = protein.from_pdb_string(pdb_str)
         amber_relaxer = relax.AmberRelaxation(
             max_iterations=max_iterations,
