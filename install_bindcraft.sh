@@ -56,6 +56,7 @@ $pkg_manager env list | grep -w 'BindCraft' >/dev/null 2>&1 || { echo -e "Error:
 
 # Load newly created BindCraft environment
 echo -e "Loading BindCraft environment\n"
+eval "$($pkg_manager shell hook --shell bash)"
 $pkg_manager activate BindCraft || { echo -e "Error: Failed to activate the BindCraft environment."; exit 1; }
 [ "$CONDA_DEFAULT_ENV" = "BindCraft" ] || { echo -e "Error: The BindCraft environment is not active."; exit 1; }
 echo -e "BindCraft environment activated at ${CONDA_BASE}/envs/BindCraft"
