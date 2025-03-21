@@ -62,7 +62,7 @@ $pkg_manager activate BindCraft || { echo -e "Error: Failed to activate the Bind
 echo -e "BindCraft environment activated at ${CONDA_BASE}/envs/BindCraft"
 
 # install required conda packages
-echo -e "Instaling conda requirements\n"
+echo -e "Installing conda requirements\n"
 if [ -n "$cuda" ]; then
     CONDA_OVERRIDE_CUDA="$cuda" $pkg_manager install pip pandas matplotlib numpy"<2.0.0" biopython biotite scipy pdbfixer openmm"=8.2.0" seaborn libgfortran5 tqdm jupyter ffmpeg fsspec py3dmol chex dm-haiku flax"<0.10.0" dm-tree joblib ml-collections immutabledict optax jaxlib=*=*cuda* jax cuda-nvcc cudnn -c conda-forge -c nvidia  --channel https://conda.graylab.jhu.edu -y || { echo -e "Error: Failed to install conda packages."; exit 1; }
 else
@@ -99,7 +99,7 @@ params_file="${params_dir}/alphafold_params_2022-12-06.tar"
 
 # download AF2 weights
 mkdir -p "${params_dir}" || { echo -e "Error: Failed to create weights directory"; exit 1; }
-wget -nvO "${params_file}" "https://storage.googleapis.com/alphafold/alphafold_params_2022-12-06.tar" || { echo -e "Error: Failed to download AlphaFold2 weights"; exit 1; }
+wget -q -O "${params_file}" "https://storage.googleapis.com/alphafold/alphafold_params_2022-12-06.tar" || { echo -e "Error: Failed to download AlphaFold2 weights"; exit 1; }
 [ -s "${params_file}" ] || { echo -e "Error: Could not locate downloaded AlphaFold2 weights"; exit 1; }
 
 # extract AF2 weights
