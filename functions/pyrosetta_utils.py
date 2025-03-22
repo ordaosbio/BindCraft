@@ -149,28 +149,6 @@ def score_interface(pdb_file, binder_chain="B"):
 
 # align pdbs to have same orientation
 def align_pdbs(reference_pdb, align_pdb, reference_chain_id, align_chain_id):
-    # initiate poses
-    #reference_pose = pr.pose_from_pdb(reference_pdb)
-    #align_pose = pr.pose_from_pdb(align_pdb)
-
-    #align = AlignChainMover()
-    #align.pose(reference_pose)
-
-    ## If the chain IDs contain commas, split them and only take the first value
-    #reference_chain_id = reference_chain_id.split(',')[0]
-    #align_chain_id = align_chain_id.split(',')[0]
-
-    ## Get the chain number corresponding to the chain ID in the poses
-    #reference_chain = pr.rosetta.core.pose.get_chain_id_from_chain(reference_chain_id, reference_pose)
-    #align_chain = pr.rosetta.core.pose.get_chain_id_from_chain(align_chain_id, align_pose)
-
-    #align.source_chain(align_chain)
-    #align.target_chain(reference_chain)
-    #align.apply(align_pose)
-
-    ## Overwrite aligned pdb
-    #align_pose.dump_pdb(align_pdb)
-    #clean_pdb(align_pdb)
     ref = load_structure(reference_pdb)
     ref = ref[ref.chain_id == reference_chain_id]
     aln = load_structure(align_pdb)
@@ -296,7 +274,7 @@ def pdb_to_string(pdb_file, chains=None, models=[1]):
         lines.append(line)
   return "\n".join(lines)
 
-def relax(pdb_file: str, relaxed_pdb_path: str, max_iterations: int = 2000, tolerance: float = 2.39, stiffness: float = 1.0):
+def relax_protein(pdb_file: str, relaxed_pdb_path: str, max_iterations: int = 2000, tolerance: float = 2.39, stiffness: float = 1.0):
     if not os.path.exists(relaxed_pdb_path):
         pdb_str = pdb_to_string(pdb_file)
         protein_obj = protein.from_pdb_string(pdb_str)
@@ -308,8 +286,9 @@ def relax(pdb_file: str, relaxed_pdb_path: str, max_iterations: int = 2000, tole
             max_outer_iterations=3,
             use_gpu=True
         )
-        relaxed_pdb_lines, _, _ = amber_relaxer.process(prot=protein_obj)
+        relaxed_pdb_lines, debug_data, _ = amber_relaxer.process(prot=protein_obj)
         with open(relaxed_pdb_path, 'w') as f:
             f.write(relaxed_pdb_lines)
         chain = protein.PDB_CHAIN_IDS[protein_obj.chain_index]
         align_pdbs(pdb_file, relaxed_pdb_path, chain, chain)
+        return debug_data['final_energy']

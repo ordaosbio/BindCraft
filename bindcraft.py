@@ -125,14 +125,14 @@ while True:
         if trajectory.aux["log"]["terminate"] == "":
             # Relax binder to calculate statistics
             trajectory_relaxed = os.path.join(design_paths["Trajectory/Relaxed"], design_name + ".pdb")
-            # pr_relax(trajectory_pdb, trajectory_relaxed)
+            final_energy = relax_protein(trajectory_pdb, trajectory_relaxed)
             shutil.copy(trajectory_pdb, trajectory_relaxed)
             # define binder chain, placeholder in case multi-chain parsing in ColabDesign gets changed
             binder_chain = "B"
 
             # Calculate clashes before and after relaxation
             num_clashes_trajectory = calculate_clash_score(trajectory_pdb)
-            # num_clashes_relaxed = calculate_clash_score(trajectory_relaxed)
+            num_clashes_relaxed = calculate_clash_score(trajectory_relaxed)
 
             # secondary structure content of starting trajectory binder and interface
             trajectory_alpha, trajectory_beta, trajectory_loops, trajectory_alpha_interface, trajectory_beta_interface, trajectory_loops_interface, trajectory_i_plddt, trajectory_ss_plddt = calc_ss_percentage(trajectory_pdb, advanced_settings, binder_chain)
@@ -150,17 +150,17 @@ while True:
             trajectory_target_rmsd = target_pdb_rmsd(trajectory_pdb, target_settings["starting_pdb"], target_settings["chains"])
 
             # save trajectory statistics into CSV
-            trajectory_data = [design_name, advanced_settings["design_algorithm"], length, seed, helicity_value, target_settings["target_hotspot_residues"], trajectory_sequence, trajectory_interface_residues, 
+            trajectory_data = [design_name, advanced_settings["design_algorithm"], length, seed, helicity_value, target_settings["target_hotspot_residues"], trajectory_sequence, trajectory_interface_residues,
                                 trajectory_metrics['plddt'], trajectory_metrics['ptm'], trajectory_metrics['i_ptm'], trajectory_metrics['pae'], trajectory_metrics['i_pae'],
                                 trajectory_i_plddt, trajectory_ss_plddt, num_clashes_trajectory, trajectory_interface_scores['binder_score'],
                                 trajectory_interface_scores['surface_hydrophobicity'], trajectory_interface_scores['interface_sc'], trajectory_interface_scores['interface_packstat'],
                                 trajectory_interface_scores['interface_dG'], trajectory_interface_scores['interface_dSASA'], trajectory_interface_scores['interface_dG_SASA_ratio'],
                                 trajectory_interface_scores['interface_fraction'], trajectory_interface_scores['interface_hydrophobicity'], trajectory_interface_scores['interface_nres'], trajectory_interface_scores['interface_interface_hbonds'],
                                 trajectory_interface_scores['interface_hbond_percentage'], trajectory_interface_scores['interface_delta_unsat_hbonds'], trajectory_interface_scores['interface_delta_unsat_hbonds_percentage'],
-                                trajectory_alpha_interface, trajectory_beta_interface, trajectory_loops_interface, trajectory_alpha, trajectory_beta, trajectory_loops, trajectory_interface_AA, trajectory_target_rmsd, 
+                                trajectory_alpha_interface, trajectory_beta_interface, trajectory_loops_interface, trajectory_alpha, trajectory_beta, trajectory_loops, trajectory_interface_AA, trajectory_target_rmsd,
                                 trajectory_time_text, traj_seq_notes, settings_file, filters_file, advanced_file]
             insert_data(trajectory_csv, trajectory_data)
-            
+
             if advanced_settings["enable_mpnn"]:
                 # initialise MPNN counters
                 mpnn_n = 1
@@ -186,7 +186,7 @@ while True:
                 }.values(), key=lambda x: x['score'])
 
                 del existing_mpnn_sequences
-  
+
                 # check whether any sequences are left after amino acid rejection and duplication check, and if yes proceed with prediction
                 if mpnn_sequences:
                     # add optimisation for increasing recycles if trajectory is beta sheeted
@@ -196,7 +196,7 @@ while True:
                     ### Compile prediction models once for faster prediction of MPNN sequences
                     clear_mem()
                     # compile complex prediction model
-                    complex_prediction_model = mk_afdesign_model(protocol="binder", num_recycles=advanced_settings["num_recycles_validation"], data_dir=advanced_settings["af_params_dir"], 
+                    complex_prediction_model = mk_afdesign_model(protocol="binder", num_recycles=advanced_settings["num_recycles_validation"], data_dir=advanced_settings["af_params_dir"],
                                                                 use_multimer=multimer_validation, use_initial_guess=advanced_settings["predict_initial_guess"], use_initial_atom_pos=advanced_settings["predict_bigbang"])
                     if advanced_settings["predict_initial_guess"] or advanced_settings["predict_bigbang"]:
                         complex_prediction_model.prep_inputs(pdb_filename=trajectory_pdb, chain='A', binder_chain='B', binder_len=length, use_binder_template=True, rm_target_seq=advanced_settings["rm_template_seq_predict"],
@@ -206,12 +206,12 @@ while True:
                                                             rm_target_sc=advanced_settings["rm_template_sc_predict"])
 
                     # compile binder monomer prediction model
-                    binder_prediction_model = mk_afdesign_model(protocol="hallucination", use_templates=False, initial_guess=False, 
-                                                                use_initial_atom_pos=False, num_recycles=advanced_settings["num_recycles_validation"], 
+                    binder_prediction_model = mk_afdesign_model(protocol="hallucination", use_templates=False, initial_guess=False,
+                                                                use_initial_atom_pos=False, num_recycles=advanced_settings["num_recycles_validation"],
                                                                 data_dir=advanced_settings["af_params_dir"], use_multimer=multimer_validation)
                     binder_prediction_model.prep_inputs(length=length)
 
-                    # iterate over designed sequences        
+                    # iterate over designed sequences
                     for mpnn_sequence in mpnn_sequences:
                         mpnn_time = time.time()
 
@@ -226,7 +226,7 @@ while True:
                         # save fasta sequence
                         if advanced_settings["save_mpnn_fasta"] is True:
                             save_fasta(mpnn_design_name, mpnn_sequence['seq'], design_paths)
-                        
+
                         ### Predict mpnn redesigned binder complex using masked templates
                         mpnn_complex_statistics, pass_af2_filters = predict_binder_complex(complex_prediction_model,
                                                                                         mpnn_sequence['seq'], mpnn_design_name,
@@ -255,7 +255,7 @@ while True:
 
                                 # secondary structure content of starting trajectory binder
                                 mpnn_alpha, mpnn_beta, mpnn_loops, mpnn_alpha_interface, mpnn_beta_interface, mpnn_loops_interface, mpnn_i_plddt, mpnn_ss_plddt = calc_ss_percentage(mpnn_design_pdb, advanced_settings, binder_chain)
-                                
+
                                 # unaligned RMSD calculate to determine if binder is in the designed binding site
                                 rmsd_site = unaligned_rmsd(trajectory_pdb, mpnn_design_pdb, binder_chain, binder_chain)
 
@@ -273,7 +273,7 @@ while True:
                                     'ShapeComplementarity': mpnn_interface_scores['interface_sc'],
                                     'PackStat': mpnn_interface_scores['interface_packstat'],
                                     'dG': mpnn_interface_scores['interface_dG'],
-                                    'dSASA': mpnn_interface_scores['interface_dSASA'], 
+                                    'dSASA': mpnn_interface_scores['interface_dSASA'],
                                     'dG/dSASA': mpnn_interface_scores['interface_dG_SASA_ratio'],
                                     'Interface_SASA_%': mpnn_interface_scores['interface_fraction'],
                                     'Interface_Hydrophobicity': mpnn_interface_scores['interface_hydrophobicity'],
@@ -299,7 +299,7 @@ while True:
 
                         # calculate complex averages
                         mpnn_complex_averages = calculate_averages(mpnn_complex_statistics, handle_aa=True)
-                        
+
                         ### Predict binder alone in single sequence mode
                         binder_statistics = predict_binder_alone(binder_prediction_model, mpnn_sequence['seq'], mpnn_design_name, length,
                                                                 trajectory_pdb, binder_chain, prediction_models, advanced_settings, design_paths)
@@ -375,7 +375,7 @@ while True:
                             print(mpnn_design_name+" passed all filters")
                             accepted_mpnn += 1
                             accepted_designs += 1
-                            
+
                             # copy designs to accepted folder
                             shutil.copy(best_model_pdb, design_paths["Accepted"])
 
@@ -416,7 +416,7 @@ while True:
 
                             failure_df.to_csv(failure_csv, index=False)
                             shutil.copy(best_model_pdb, design_paths["Rejected"])
-                        
+
                         # increase MPNN design number
                         mpnn_n += 1
 
@@ -460,3 +460,4 @@ while True:
 elapsed_time = time.time() - script_start_time
 elapsed_text = f"{'%d hours, %d minutes, %d seconds' % (int(elapsed_time // 3600), int((elapsed_time % 3600) // 60), int(elapsed_time % 60))}"
 print("Finished all designs. Script execution for "+str(trajectory_n)+" trajectories took: "+elapsed_text)
+return target_settings["design_path"]
